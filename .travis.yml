@@ -1,0 +1,12 @@
+language: python
+python:
+  - "2.7"
+# command to install dependencies
+install:
+- pip install pysam
+- pip install biopython
+# command to run tests
+script:
+  - time python merge_pcr_duplicates.py -o new_output.bed test-data/example2_inputReads.bam  test-data/example2_inputBC.fastq
+  - diff test-data/example2_output.bed new_output.bed
+
