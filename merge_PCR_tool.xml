@@ -1,0 +1,37 @@
+<tool id="chromosome_info_pysam.py" name="Merge duplicates" version="0.1.0">
+  <description>according to random barcode library.</description>
+  <version_command>python $__tool_directory__/chromosome_info_pysam.py </version_command>
+  <requirements>
+    <requirement type="package">Biopython</requirement>
+    <requirement type="package" version="0.11.1">pysam</requirement>
+    <requirement type="package">argparse</requirement>
+
+  </requirements>
+  <!-- interpreter attribute is deprecated and $__tool_directory__ variable is superior -->
+  <command interpreter="python"><![CDATA[chromosome_info_pysam.py
+$bam_file
+$fastaq_file
+#if $e and $e is not None:
+$e
+#end if
+--output_file $out_file]]></command>
+  <inputs>
+    <param area="false" label="bam file." name="bam_file" type="data" format="bam"/>
+    <param area="false" label="fastaq barcode library." name="fastaq_file" type="data" format="fastq"/>
+    <!--param area="false" value="True" label="End of File." argument= "-e" name="e" type="boolean" optional="true"/-->
+    <param type="boolean" truevalue="-e" falsevalue="" name="e"/>
+  </inputs>
+  <outputs>
+    <data format="bed" hidden="false" name="out_file"/>
+  </outputs>
+  <tests>
+    <test>
+      <param name="bam_file" value="example3_inputa.bam"/>
+      <param name="fastaq_file" value="example3_inputb.fastq"/>
+      <param name="o" value="result.bed"/>
+      <param name="e" value="True"/>
+      <output name="out_file" file="Output_Result.bed"/>
+    </test>
+  </tests>
+  
+</tool>

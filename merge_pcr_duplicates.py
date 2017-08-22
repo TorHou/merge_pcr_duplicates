@@ -67,7 +67,7 @@ def fastq_reader(fastq_file):
     fastq_dt = {}
     update_fastq = fastq_dt.update
     for fastq_data in SeqIO.parse(fastq_file, "fastq"):
-        update_fastq({fastq_data.id: fastq_data.seq})
+        update_fastq({str(fastq_data.id): str(fastq_data.seq)})
     return fastq_dt
 
 def chromosome_counter(i, end, bam_data):
@@ -99,25 +99,27 @@ def chromosome_info(bam_data, end):
         for i in range(len(bam_data)):
             rec_id = bam_data[i][1]
             if rec_id in fastq_data:
-                chr_info = chromosome_counter(i, end)
+                chr_info = chromosome_counter(i, end, bam_data)
             else:
                 print(rec_id + " ID not found in fastq file")
     return chr_info
 
 def printing(endResult, end):
-    with open(args.output_file, "w") as f:
-        if end == True:
-            for entry in endResult:
-                wr = ("%s\t%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2], entry[3],
-                                                  score[(entry[0], entry[1], entry[2], fastq_data[entry[3]],
-                                                         entry[4])], entry[4]))
-                f.write(wr + '\n')
-        else:
-            for entry in endResult:
-                wr = ("%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2],
-                                                  score[(entry[0], entry[1], fastq_data[entry[2]],
-                                                         entry[3])], entry[3]))
-                f.write(wr + '\n')
+    if endResult != []:
+        with open(args.output_file, "w") as f:
+            if end == True:
+                for entry in endResult:
+                    wr = ("%s\t%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2], entry[3],
+                                                      score[(entry[0], entry[1], entry[2], fastq_data[entry[3]],
+                                                             entry[4])], entry[4]))
+                    f.write(wr + '\n')
+            elif end == False:
+                for entry in endResult:
+                    wr = ("%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2],
+                                                      score[(entry[0], entry[1], fastq_data[entry[2]],
+                                                             entry[3])], entry[3]))
+                    f.write(wr + '\n')
+
 tool_description = """
 Merge PCR duplicates according to random barcode library.
 Barcodes containing uncalled base 'N' are removed.
@@ -143,10 +145,10 @@ parser.add_argument("bam_file", help="Path to bam file containing alignments.", 
 parser.add_argument("fastq_file", help="Path to fastq barcode library.", metavar='FASTQ_File')
 parser.add_argument("-o", "--output_file", required=True, help="Write results to this file.",
                     metavar='Output_File')
-parser.add_argument("-e", "--end", default=True, help="Write results to this file."
-                    )
+parser.add_argument("-e", "--end", action='store_false', help="If sequence end needs to be considered.")
 args = parser.parse_args()
 file_check()
 end = args.end
 fastq_data = fastq_reader(args.fastq_file)
 bam_reader(args.bam_file, end)
+
