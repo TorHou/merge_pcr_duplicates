@@ -11,15 +11,19 @@
   <command interpreter="python"><![CDATA[chromosome_info_pysam.py
 $bam_file
 $fastaq_file
-#if $e and $e is not None:
-$e
+#if $Sequnce_end and $Sequnce_end is not None:
+$Sequnce_end
+#end if
+#if $XS_tag and $XS_tag is not None:
+$XS_tag
 #end if
 --output_file $out_file]]></command>
   <inputs>
     <param area="false" label="bam file." name="bam_file" type="data" format="bam"/>
     <param area="false" label="fastaq barcode library." name="fastaq_file" type="data" format="fastq"/>
     <!--param area="false" value="True" label="End of File." argument= "-e" name="e" type="boolean" optional="true"/-->
-    <param type="boolean" truevalue="-e" falsevalue="" name="e"/>
+   <param type="boolean" truevalue="-t" falsevalue="" name="XS_tag"/> 
+   <param type="boolean" truevalue="-e" falsevalue="" name="Sequnce_end"/>
   </inputs>
   <outputs>
     <data format="bed" hidden="false" name="out_file"/>
@@ -29,7 +33,8 @@ $e
       <param name="bam_file" value="example3_inputa.bam"/>
       <param name="fastaq_file" value="example3_inputb.fastq"/>
       <param name="o" value="result.bed"/>
-      <param name="e" value="True"/>
+      <param name="XS_tag" value="True"/>
+      <param name="Sequnce_end" value="True"/>
       <output name="out_file" file="Output_Result.bed"/>
     </test>
   </tests>

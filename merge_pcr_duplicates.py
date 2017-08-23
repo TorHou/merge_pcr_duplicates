@@ -21,7 +21,7 @@ def file_check():
     if flag == False:
         exit()
 
-def bam_reader(bam_file, end):
+def bam_reader(bam_file, end, tag):
     bam = pysam.AlignmentFile(bam_file, "rb")
     chromosomes = bam.references
     for chrom_all in chromosomes:
@@ -33,31 +33,55 @@ def bam_reader(bam_file, end):
                     chrom_bam = bam.get_reference_name(line.reference_id)
                 except:
                     continue
-                if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
-                    if line.is_reverse:
-                        strand = '-'
-                    else:
-                        strand = '+'
-                    if 'N' not in fastq_data[line.query_name]:
-                        bam_filter.append((line.reference_start,
-                                           line.reference_start + line.reference_length,
-                                           line.query_name, strand,
-                                           chrom_bam, fastq_data[line.query_name]))
+                if tag == False:
+                    if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
+                        if line.is_reverse:
+                            strand = '-'
+                        else:
+                            strand = '+'
+                        if 'N' not in fastq_data[line.query_name]:
+                            bam_filter.append((line.reference_start,
+                                               line.reference_start + line.reference_length,
+                                               line.query_name, strand,
+                                               chrom_bam, fastq_data[line.query_name]))
+                else:
+                    if (line.is_unmapped == False and chrom_bam == chrom_all):
+                        if line.is_reverse:
+                            strand = '-'
+                        else:
+                            strand = '+'
+                        if 'N' not in fastq_data[line.query_name]:
+                            bam_filter.append((line.reference_start,
+                                               line.reference_start + line.reference_length,
+                                               line.query_name, strand,
+                                               chrom_bam, fastq_data[line.query_name]))
         else:
             for line in data:
                 try:
                     chrom_bam = bam.get_reference_name(line.reference_id)
                 except:
                     continue
-                if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
-                    if line.is_reverse:
-                        strand = '-'
-                    else:
-                        strand = '+'
-                    if 'N' not in fastq_data[line.query_name]:
-                        bam_filter.append((line.reference_start,
-                                           line.query_name, strand,
-                                           chrom_bam, fastq_data[line.query_name]))
+                if tag == False:
+                    if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
+                        if line.is_reverse:
+                            strand = '-'
+                        else:
+                            strand = '+'
+                        if 'N' not in fastq_data[line.query_name]:
+                            bam_filter.append((line.reference_start,
+                                               line.query_name, strand,
+                                               chrom_bam, fastq_data[line.query_name]))
+                else:
+                    if (line.is_unmapped == False and chrom_bam == chrom_all):
+                        if line.is_reverse:
+                            strand = '-'
+                        else:
+                            strand = '+'
+                        if 'N' not in fastq_data[line.query_name]:
+                            bam_filter.append((line.reference_start,
+                                               line.query_name, strand,
+                                               chrom_bam, fastq_data[line.query_name]))
+
         bam_data = chromosome_info(bam_filter, end)
         printing(bam_data, end)
     bam.close()
@@ -69,6 +93,7 @@ def fastq_reader(fastq_file):
     for fastq_data in SeqIO.parse(fastq_file, "fastq"):
         update_fastq({str(fastq_data.id): str(fastq_data.seq)})
     return fastq_dt
+
 
 def chromosome_counter(i, end, bam_data):
     # merge_checks contains reference chromosome, ref. start, ref. end and strand.
@@ -85,6 +110,7 @@ def chromosome_counter(i, end, bam_data):
         if score[merge_checks] == 1:
             append_merge((bam_data[i][3], bam_data[i][0], bam_data[i][1], bam_data[i][2]))
     return merge_data
+
 
 def chromosome_info(bam_data, end):
     chr_info = []
@@ -105,7 +131,7 @@ def chromosome_info(bam_data, end):
     return chr_info
 
 def printing(endResult, end):
-    if endResult != []:
+    if endResult != [] :
         with open(args.output_file, "w") as f:
             if end == True:
                 for entry in endResult:
@@ -138,6 +164,7 @@ Author: Fayyaz Hussain
 Status: Testing
 """
 
+
 # parse command line arguments
 parser = argparse.ArgumentParser(prog="Chromosomes Information", description=tool_description,
                                  epilog=epilog, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -145,10 +172,11 @@ parser.add_argument("bam_file", help="Path to bam file containing alignments.", 
 parser.add_argument("fastq_file", help="Path to fastq barcode library.", metavar='FASTQ_File')
 parser.add_argument("-o", "--output_file", required=True, help="Write results to this file.",
                     metavar='Output_File')
+parser.add_argument("-t", "--tag", action='store_true', help="If XS tag is to be excluded.")
 parser.add_argument("-e", "--end", action='store_false', help="If sequence end needs to be considered.")
 args = parser.parse_args()
 file_check()
+tag = args.tag
 end = args.end
 fastq_data = fastq_reader(args.fastq_file)
-bam_reader(args.bam_file, end)
-
+bam_reader(args.bam_file, end, tag)
