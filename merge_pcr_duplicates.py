@@ -9,6 +9,7 @@ score = Counter()
 endResult = []
 merge_data = []
 fastq_data = {}
+bam_filter = []
 
 def file_check():
     flag = True
@@ -21,11 +22,36 @@ def file_check():
     if flag == False:
         exit()
 
+def get_bam_filter(end, line, chrom_bam):
+
+    if end == True:
+        if line.is_reverse:
+            strand = '-'
+        else:
+            strand = '+'
+        if 'N' not in fastq_data[line.query_name]:
+            bam_filter.append((line.reference_start,
+                               line.reference_start + line.reference_length,
+                               line.query_name, strand,
+                               chrom_bam, fastq_data[line.query_name]))
+
+    else:
+        if line.is_reverse:
+            strand = '-'
+        else:
+            strand = '+'
+        if 'N' not in fastq_data[line.query_name]:
+            bam_filter.append((line.reference_start,
+                               line.query_name, strand,
+                               chrom_bam, fastq_data[line.query_name]))
+    return bam_filter
+
 def bam_reader(bam_file, end, tag):
     bam = pysam.AlignmentFile(bam_file, "rb")
+    filtered_data = []
     chromosomes = bam.references
     for chrom_all in chromosomes:
-        bam_filter = []
+
         data = bam.fetch(multiple_iterators=True, until_eof=True)
         if end == True:
             for line in data:
@@ -35,26 +61,12 @@ def bam_reader(bam_file, end, tag):
                     continue
                 if tag == False:
                     if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
-                        if line.is_reverse:
-                            strand = '-'
-                        else:
-                            strand = '+'
-                        if 'N' not in fastq_data[line.query_name]:
-                            bam_filter.append((line.reference_start,
-                                               line.reference_start + line.reference_length,
-                                               line.query_name, strand,
-                                               chrom_bam, fastq_data[line.query_name]))
+                        filtered_data = get_bam_filter(end, line, chrom_bam)
+
                 else:
                     if (line.is_unmapped == False and chrom_bam == chrom_all):
-                        if line.is_reverse:
-                            strand = '-'
-                        else:
-                            strand = '+'
-                        if 'N' not in fastq_data[line.query_name]:
-                            bam_filter.append((line.reference_start,
-                                               line.reference_start + line.reference_length,
-                                               line.query_name, strand,
-                                               chrom_bam, fastq_data[line.query_name]))
+                        filtered_data = get_bam_filter(end, line, chrom_bam)
+
         else:
             for line in data:
                 try:
@@ -63,26 +75,12 @@ def bam_reader(bam_file, end, tag):
                     continue
                 if tag == False:
                     if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
-                        if line.is_reverse:
-                            strand = '-'
-                        else:
-                            strand = '+'
-                        if 'N' not in fastq_data[line.query_name]:
-                            bam_filter.append((line.reference_start,
-                                               line.query_name, strand,
-                                               chrom_bam, fastq_data[line.query_name]))
+                        filtered_data = get_bam_filter(end, line, chrom_bam)
                 else:
                     if (line.is_unmapped == False and chrom_bam == chrom_all):
-                        if line.is_reverse:
-                            strand = '-'
-                        else:
-                            strand = '+'
-                        if 'N' not in fastq_data[line.query_name]:
-                            bam_filter.append((line.reference_start,
-                                               line.query_name, strand,
-                                               chrom_bam, fastq_data[line.query_name]))
+                        filtered_data = get_bam_filter(end, line, chrom_bam)
 
-        bam_data = chromosome_info(bam_filter, end)
+        bam_data = chromosome_info(filtered_data, end)
         printing(bam_data, end)
     bam.close()
 
@@ -180,3 +178,4 @@ tag = args.tag
 end = args.end
 fastq_data = fastq_reader(args.fastq_file)
 bam_reader(args.bam_file, end, tag)
+
