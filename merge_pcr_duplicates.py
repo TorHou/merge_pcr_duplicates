@@ -96,7 +96,6 @@ def printing(endResult, end):
 
 tool_description = """
 Merge PCR duplicates according to random barcode library.
-Barcodes containing uncalled base 'N' are removed.
 Input:
 * bam file containing fastq read-id and other details
 * fastq library of random barcodes
@@ -114,17 +113,17 @@ Status: Testing
 
 
 # parse command line arguments
-parser = argparse.ArgumentParser(prog="Chromosomes Information", description=tool_description,
+parser = argparse.ArgumentParser(description=tool_description,
                                  epilog=epilog, formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument("bam_file", help="Path to bam file containing alignments.", metavar='BAM_File')
 parser.add_argument("fastq_file", help="Path to fastq barcode library.", metavar='FASTQ_File')
 parser.add_argument("-o", "--output_file", required=True, help="Write results to this file.",
                     metavar='Output_File')
-parser.add_argument("-t", "--tag", action='store_true', default=False, help="If XS tag is to be excluded.")
-parser.add_argument("-e", "--end", action='store_false', default=True, help="If sequence end needs to be considered.")
+parser.add_argument("-fxs", "--filter_by_xs_tag", action='store_true', default=False, help="Mapped reads with XS tag will be excluded.")
+parser.add_argument("-e", "--ends", action='store_false', default=False, help="Consider sequence end coordinates for merging the PCR duplicates. By default reads with the same chromosome, strand, start and barcode are merged")
 args = parser.parse_args()
-tag = args.tag
-end = args.end
+filter_by_xs_tag = args.filter_by_xs_tag
+consider_end = args.ends
 fastq_data = fastq_reader(args.fastq_file)
-bam_reader(args.bam_file, end, tag)
+bam_reader(args.bam_file, consider_end, filter_by_xs_tag)
 
