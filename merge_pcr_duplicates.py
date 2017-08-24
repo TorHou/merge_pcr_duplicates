@@ -22,28 +22,17 @@ def file_check():
     if flag == False:
         exit()
 
-def get_bam_filter(end, line, chrom_bam):
 
-    if end == True:
-        if line.is_reverse:
-            strand = '-'
-        else:
-            strand = '+'
-        if 'N' not in fastq_data[line.query_name]:
-            bam_filter.append((line.reference_start,
-                               line.reference_start + line.reference_length,
-                               line.query_name, strand,
-                               chrom_bam, fastq_data[line.query_name]))
-
+def get_bam_filter(line, chrom_bam):
+    if line.is_reverse:
+        strand = '-'
     else:
-        if line.is_reverse:
-            strand = '-'
-        else:
-            strand = '+'
-        if 'N' not in fastq_data[line.query_name]:
-            bam_filter.append((line.reference_start,
-                               line.query_name, strand,
-                               chrom_bam, fastq_data[line.query_name]))
+        strand = '+'
+    if 'N' not in fastq_data[line.query_name]:
+        bam_filter.append((line.reference_start,
+                           line.reference_start + line.reference_length,
+                           line.query_name, strand,
+                           chrom_bam, fastq_data[line.query_name]))
     return bam_filter
 
 def bam_reader(bam_file, end, tag):
@@ -51,34 +40,20 @@ def bam_reader(bam_file, end, tag):
     filtered_data = []
     chromosomes = bam.references
     for chrom_all in chromosomes:
-
         data = bam.fetch(multiple_iterators=True, until_eof=True)
-        if end == True:
-            for line in data:
-                try:
-                    chrom_bam = bam.get_reference_name(line.reference_id)
-                except:
-                    continue
-                if tag == False:
-                    if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
-                        filtered_data = get_bam_filter(end, line, chrom_bam)
 
-                else:
-                    if (line.is_unmapped == False and chrom_bam == chrom_all):
-                        filtered_data = get_bam_filter(end, line, chrom_bam)
+        for line in data:
+            try:
+                chrom_bam = bam.get_reference_name(line.reference_id)
+            except:
+                continue
+            if tag == False:
+                if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
+                    filtered_data = get_bam_filter(line, chrom_bam)
 
-        else:
-            for line in data:
-                try:
-                    chrom_bam = bam.get_reference_name(line.reference_id)
-                except:
-                    continue
-                if tag == False:
-                    if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
-                        filtered_data = get_bam_filter(end, line, chrom_bam)
-                else:
-                    if (line.is_unmapped == False and chrom_bam == chrom_all):
-                        filtered_data = get_bam_filter(end, line, chrom_bam)
+            elif tag == True:
+                if (line.is_unmapped == False and chrom_bam == chrom_all):
+                    filtered_data = get_bam_filter(line, chrom_bam)
 
         bam_data = chromosome_info(filtered_data, end)
         printing(bam_data, end)
@@ -94,38 +69,26 @@ def fastq_reader(fastq_file):
 
 
 def chromosome_counter(i, end, bam_data):
-    # merge_checks contains reference chromosome, ref. start, ref. end and strand.
     if end == True:
         merge_checks = (bam_data[i][4], bam_data[i][0], bam_data[i][1], bam_data[i][5], bam_data[i][3])
-        score.update([merge_checks])
-        append_merge = merge_data.append
-        if score[merge_checks] == 1:
-            append_merge((bam_data[i][4], bam_data[i][0], bam_data[i][1], bam_data[i][2], bam_data[i][3]))
     else:
-        merge_checks = (bam_data[i][3], bam_data[i][0], bam_data[i][4], bam_data[i][2])
-        score.update([merge_checks])
-        append_merge = merge_data.append
-        if score[merge_checks] == 1:
-            append_merge((bam_data[i][3], bam_data[i][0], bam_data[i][1], bam_data[i][2]))
-    return merge_data
+        merge_checks = (bam_data[i][4], bam_data[i][0], bam_data[i][5], bam_data[i][3])
+    score.update([merge_checks])
+    append_merge = merge_data.append
+    if score[merge_checks] == 1:
+        append_merge((bam_data[i][4], bam_data[i][0], bam_data[i][1], bam_data[i][2], bam_data[i][3]))
 
+    return merge_data
 
 def chromosome_info(bam_data, end):
     chr_info = []
-    if end == True:
-        for i in range(len(bam_data)):
-            rec_id = bam_data[i][2]
-            if rec_id in fastq_data:
-                chr_info = chromosome_counter(i, end, bam_data)
-            else:
-                print(rec_id + " ID not found in fastq file")
-    else:
-        for i in range(len(bam_data)):
-            rec_id = bam_data[i][1]
-            if rec_id in fastq_data:
-                chr_info = chromosome_counter(i, end, bam_data)
-            else:
-                print(rec_id + " ID not found in fastq file")
+    for i in range(len(bam_data)):
+        rec_id = bam_data[i][2]
+        if rec_id in fastq_data:
+            chr_info = chromosome_counter(i, end, bam_data)
+        else:
+            print(rec_id + " ID not found in fastq file")
+
     return chr_info
 
 def printing(endResult, end):
@@ -137,11 +100,11 @@ def printing(endResult, end):
                                                       score[(entry[0], entry[1], entry[2], fastq_data[entry[3]],
                                                              entry[4])], entry[4]))
                     f.write(wr + '\n')
-            elif end == False:
+            else:
                 for entry in endResult:
-                    wr = ("%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2],
-                                                      score[(entry[0], entry[1], fastq_data[entry[2]],
-                                                             entry[3])], entry[3]))
+                    wr = ("%s\t%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2], entry[3],
+                                                      score[(entry[0], entry[1], fastq_data[entry[3]],
+                                                             entry[4])], entry[4]))
                     f.write(wr + '\n')
 
 tool_description = """
