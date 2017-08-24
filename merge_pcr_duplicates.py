@@ -1,7 +1,6 @@
 import pysam
 from collections import Counter
 import argparse
-from os.path import isfile
 from Bio import SeqIO
 
 bam_data = []
@@ -10,17 +9,6 @@ endResult = []
 merge_data = []
 fastq_data = {}
 bam_filter = []
-
-def file_check():
-    flag = True
-    if not isfile(args.fastq_file):
-        print("ERROR: Fastq file: '{}' not found.".format(args.fastq_file))
-        flag = False
-    if not isfile(args.bam_file):
-        print("ERROR: bam file: '{}' not found.".format(args.bam_file))
-        flag = False
-    if flag == False:
-        exit()
 
 
 def get_bam_filter(line, chrom_bam):
@@ -136,7 +124,6 @@ parser.add_argument("-o", "--output_file", required=True, help="Write results to
 parser.add_argument("-t", "--tag", action='store_true', help="If XS tag is to be excluded.")
 parser.add_argument("-e", "--end", action='store_false', help="If sequence end needs to be considered.")
 args = parser.parse_args()
-file_check()
 tag = args.tag
 end = args.end
 fastq_data = fastq_reader(args.fastq_file)
