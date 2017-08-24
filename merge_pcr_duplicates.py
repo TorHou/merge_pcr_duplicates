@@ -50,9 +50,8 @@ def bam_reader(bam_file, end, tag):
 
 def fastq_reader(fastq_file):
     fastq_dt = {}
-    update_fastq = fastq_dt.update
     for fastq_data in SeqIO.parse(fastq_file, "fastq"):
-        update_fastq({str(fastq_data.id): str(fastq_data.seq)})
+        fastq_dt[str(fastq_data.id)] = str(fastq_data.seq)
     return fastq_dt
 
 
