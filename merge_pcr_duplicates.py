@@ -121,8 +121,8 @@ parser.add_argument("bam_file", help="Path to bam file containing alignments.", 
 parser.add_argument("fastq_file", help="Path to fastq barcode library.", metavar='FASTQ_File')
 parser.add_argument("-o", "--output_file", required=True, help="Write results to this file.",
                     metavar='Output_File')
-parser.add_argument("-t", "--tag", action='store_true', help="If XS tag is to be excluded.")
-parser.add_argument("-e", "--end", action='store_false', help="If sequence end needs to be considered.")
+parser.add_argument("-t", "--tag", action='store_true', default=False, help="If XS tag is to be excluded.")
+parser.add_argument("-e", "--end", action='store_false', default=True, help="If sequence end needs to be considered.")
 args = parser.parse_args()
 tag = args.tag
 end = args.end
