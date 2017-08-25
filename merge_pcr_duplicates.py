@@ -10,8 +10,6 @@ fastq_data = {}
 bam_filter = []
 merge_data = []
 
-
-
 def get_bam_filter(line, chrom_bam):
     if line.is_reverse:
         strand = '-'
@@ -80,21 +78,15 @@ def chromosome_info(bam_data):
 def print_results(endResult):
     if endResult != [] :
         with open(args.output_file, "w") as f:
-            if args.ends:
-                for entry in endResult:
-                    wr = ("%s\t%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2], entry[3],
-                                                      score[(entry[0], entry[1], entry[2], fastq_data[entry[3]],
-                                                             entry[4])], entry[4]))
-                    f.write(wr + '\n')
-            else:
-                for entry in endResult:
-                    wr = ("%s\t%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2], entry[3],
-                                                      score[(entry[0], entry[1], fastq_data[entry[3]],
-                                                             entry[4])], entry[4]))
-                    f.write(wr + '\n')
+            for entry in endResult:
+                if args.ends:
+                    sc = score[(entry[0], entry[1], entry[2], fastq_data[entry[3]], entry[4])]
+                else:
+                    sc = score[(entry[0], entry[1], fastq_data[entry[3]], entry[4])]
+                f.write('\t'.join( str(x) for x in [entry[0], entry[1], entry[2], entry[3], sc, entry[4]] ) + '\n')
 
 tool_description = """
-Merge PCR duplicates according to random barcode library.
+Merge PCR duplicates according to a random barcode library.
 Input:
 * bam file containing fastq read-id and other details
 * fastq library of random barcodes
