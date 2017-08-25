@@ -6,9 +6,10 @@ from Bio import SeqIO
 bam_data = []
 score = Counter()
 endResult = []
-merge_data = []
 fastq_data = {}
 bam_filter = []
+merge_data = []
+
 
 
 def get_bam_filter(line, chrom_bam):
@@ -23,30 +24,29 @@ def get_bam_filter(line, chrom_bam):
                            chrom_bam, fastq_data[line.query_name]))
     return bam_filter
 
-def bam_reader(bam_file, end, tag):
+
+def bam_reader(bam_file, xs_tag):
+    global merge_data
     bam = pysam.AlignmentFile(bam_file, "rb")
     filtered_data = []
     chromosomes = bam.references
-    for chrom_all in chromosomes:
-        data = bam.fetch(multiple_iterators=True, until_eof=True)
+    for chrom in chromosomes:
+        data = bam.fetch(chrom, multiple_iterators=True)
 
-        for line in data:
+        for entry in data:
             try:
-                chrom_bam = bam.get_reference_name(line.reference_id)
+                chrom_bam = bam.get_reference_name(entry.reference_id)
             except:
                 continue
-            if tag == False:
-                if (line.is_unmapped == False and line.has_tag("XS") == False and chrom_bam == chrom_all):
-                    filtered_data = get_bam_filter(line, chrom_bam)
-
-            elif tag == True:
-                if (line.is_unmapped == False and chrom_bam == chrom_all):
-                    filtered_data = get_bam_filter(line, chrom_bam)
-
-        bam_data = chromosome_info(filtered_data, end)
-        printing(bam_data, end)
+            if (entry.is_unmapped == False and chrom_bam == chrom):
+                if xs_tag and entry.has_tag("XS"):
+                    continue
+                else:
+                    filtered_data = get_bam_filter(entry, chrom_bam)
+        chromosome_info(filtered_data)
+        print_results(merge_data)
+        merge_data = []
     bam.close()
-
 
 def fastq_reader(fastq_file):
     fastq_dt = {}
@@ -55,33 +55,32 @@ def fastq_reader(fastq_file):
     return fastq_dt
 
 
-def chromosome_counter(i, end, bam_data):
-    if end == True:
+def chromosome_counter(i, bam_data):
+    if args.ends:
         merge_checks = (bam_data[i][4], bam_data[i][0], bam_data[i][1], bam_data[i][5], bam_data[i][3])
     else:
         merge_checks = (bam_data[i][4], bam_data[i][0], bam_data[i][5], bam_data[i][3])
-    score.update([merge_checks])
-    append_merge = merge_data.append
+    score[merge_checks] += 1
     if score[merge_checks] == 1:
-        append_merge((bam_data[i][4], bam_data[i][0], bam_data[i][1], bam_data[i][2], bam_data[i][3]))
+        merge_data.append((bam_data[i][4], bam_data[i][0], bam_data[i][1], bam_data[i][2], bam_data[i][3]))
+    
+    #append_merge = merge_data.append
+    #if score[merge_checks] == 1:
+        #append_merge((bam_data[i][4], bam_data[i][0], bam_data[i][1], bam_data[i][2], bam_data[i][3]))
 
-    return merge_data
-
-def chromosome_info(bam_data, end):
+def chromosome_info(bam_data):
     chr_info = []
     for i in range(len(bam_data)):
         rec_id = bam_data[i][2]
         if rec_id in fastq_data:
-            chr_info = chromosome_counter(i, end, bam_data)
+            chromosome_counter(i, bam_data)
         else:
             print(rec_id + " ID not found in fastq file")
 
-    return chr_info
-
-def printing(endResult, end):
+def print_results(endResult):
     if endResult != [] :
         with open(args.output_file, "w") as f:
-            if end == True:
+            if args.ends:
                 for entry in endResult:
                     wr = ("%s\t%s\t%s\t%s\t%s\t%s" % (entry[0], entry[1], entry[2], entry[3],
                                                       score[(entry[0], entry[1], entry[2], fastq_data[entry[3]],
@@ -119,11 +118,10 @@ parser.add_argument("bam_file", help="Path to bam file containing alignments.", 
 parser.add_argument("fastq_file", help="Path to fastq barcode library.", metavar='FASTQ_File')
 parser.add_argument("-o", "--output_file", required=True, help="Write results to this file.",
                     metavar='Output_File')
-parser.add_argument("-fxs", "--filter_by_xs_tag", action='store_true', default=False, help="Mapped reads with XS tag will be excluded.")
-parser.add_argument("-e", "--ends", action='store_false', default=False, help="Consider sequence end coordinates for merging the PCR duplicates. By default reads with the same chromosome, strand, start and barcode are merged")
+parser.add_argument("--filter_by_nh_tag", action='store_true', default=False, help="Mapped reads with XS tag will be excluded.")
+parser.add_argument("-e", "--ends", action='store_true', default=False, help="Consider sequence end coordinates when merging the PCR duplicates. By default reads with the same chromosome, strand, start and barcode are merged")
 args = parser.parse_args()
-filter_by_xs_tag = args.filter_by_xs_tag
-consider_end = args.ends
+args.filter_by_nh_tag
 fastq_data = fastq_reader(args.fastq_file)
-bam_reader(args.bam_file, consider_end, filter_by_xs_tag)
+bam_reader(args.bam_file, args.filter_by_nh_tag)
 
