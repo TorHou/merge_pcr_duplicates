@@ -7,6 +7,6 @@ install:
 - pip install biopython
 # command to run tests
 script:
-  - time python merge_pcr_duplicates.py -o new_output.bed test-data/example2_inputReads.bam  test-data/example2_inputBC.fastq
-  - diff test-data/example2_output.bed new_output.bed
+  - time python merge_pcr_duplicates.py -o new_output.bed test-data/example_star1_input.bam  test-data/example_star1_input.fastq
+  - diff test-data/example_star1_output.bed new_output.bed
 
