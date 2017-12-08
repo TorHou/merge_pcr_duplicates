@@ -20,7 +20,7 @@ of cDNA that covers a reproduced position (y-axis) is plotted against the total 
 cDNA (x-axis).
 By default output is written to source file location.
 Example usage:
-chromosome_quality_check.py file1.bed file2.bed --out output.pdf
+chromosome_quality_check.py file1.bed file2.bed -o output.pdf
 """
 
 # parse command line arguments
@@ -95,7 +95,7 @@ print("[NOTE] Process data")
 
 common_sets = set(main_groupcount[0].keys())
 
-# reads that are the same between the sets
+# positions that are the same between the sets
 for i in range(0,len(main_groupcount)):
     sample = main_groupcount[i]
     common_sets = common_sets & set(sample.keys())
@@ -104,7 +104,7 @@ for i in range(0,len(main_groupcount)):
     for x in counted_set.keys():
         all[min(x - 1, 4)] += counted_set[x]
 
-# add to the intersection-counts for each sample the number of reads
+# add to the intersection-counts for each sample the number of positions
 # that are x-times duplicated
 for region in common_sets:
     for sample in main_groupcount:

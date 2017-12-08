@@ -20,7 +20,7 @@ for a shift equal to the fragment size. Another peak for the read-length might a
 be observable. 
 By default output is written to source file location.
 Example usage:
-cross_convolution_analysis.py reads.bam genome_table.tsv shift --out output.pdf
+cross_convolution_analysis.py reads.bam genome_table.tsv shift -o output.pdf
 """
 
 # parse command line arguments

@@ -12,7 +12,7 @@ The tool takes in a bed3 or interval file and returns
 sequences in as fasta.
 By default output is written to source file location.
 Example usage:
-fetch_DNA_sequence.py interval-file --out output.file
+fetch_DNA_sequence.py interval-file -o output.file
 """
 
 # parse command line arguments
@@ -55,7 +55,7 @@ file = args.interval_file
 cl_regions = pandas.read_table(file, sep='\t', names=['chrom', 'start', 'stop'])
 
 # link to the reference genome in fasta format
-fastafile = pysam.Fastafile("test-data/hg18.fa")
+fastafile = pysam.Fastafile("test-data/hg19.fa")
 
 print("[NOTE] finish")
 
@@ -75,7 +75,7 @@ sequence_file = open(outfile_name, 'w')
 
 # get sequence for coordinates
 for i in range(0,len(cl_regions)):
-   sequence_file.write(fastafile.fetch(cl_regions['chrom'][i], cl_regions['start'][i], cl_regions['stop'][i]) + '\n')
+    sequence_file.write(fastafile.fetch(cl_regions['chrom'][i], cl_regions['start'][i], cl_regions['stop'][i]) + '\n')
 
 sequence_file.close()
 

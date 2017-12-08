@@ -18,7 +18,7 @@ Ideally the trend should follow a diagonal line with the highest reproducible mo
 upper most corner.
 By default output is written to source file location.
 Example usage:
-crosslink_quality_check.py file1.fasta file2.fasta kmer_length -o output.pdf
+crosslink_quality_check.py exp_rep_1.fasta exp_rep_2.fasta controls.fasta kmer_length -o output.pdf
 """
 
 # parse command line arguments
@@ -26,12 +26,15 @@ parser = argparse.ArgumentParser(description=tool_description,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
 # positional arguments
 parser.add_argument(
-    "file1",
-    help="Path to first fasta file.")
+    "exp_rep_1",
+    help="Path to first experiment replicate fasta file.")
 parser.add_argument(
-    'file2',
+    "exp_rep_2",
+    help="Path to second experiment replicate fasta file.")
+parser.add_argument(
+    'controls',
     nargs='+',
-    help="Path to the other fasta files. Specify at least one more file for file1 to be compared to.")
+    help="Path to the control fasta files. Specify at least one more files.")
 parser.add_argument(
     'kmer_length',
     type=int,
@@ -51,8 +54,9 @@ if args.debug:
 else:
     logging.basicConfig(format="%(filename)s - %(levelname)s - %(message)s")
 logging.info("Parsed arguments:")
-logging.info("  file1: '{}'".format(args.file1))
-logging.info("  file2: '{}'".format(args.file2))
+logging.info("  exp_rep_1: '{}'".format(args.exp_rep_1))
+logging.info("  exp_rep_2: '{}'".format(args.exp_rep_2))
+logging.info("  controls: '{}'".format(args.controls))
 logging.info("  kmer_length: '{}'".format(args.kmer_length))
 if args.outfile:
     logging.info("  outfile: enabled writing to file")
@@ -70,8 +74,8 @@ print("[START]")
 print("[NOTE] Read data")
 
 # your read data in bed6 format
-files = [args.file1]
-files.extend(args.file2)
+files = [args.exp_rep_1, args.exp_rep_2]
+files.extend(args.controls)
 
 # read first line of first file to get length of the sequences
 tmp = open(files[0])
@@ -143,40 +147,52 @@ print("[NOTE] Make plots")
 
 plotpath = os.path.dirname(os.path.abspath(__file__)) + '/'
 
+df = pandas.DataFrame(kmer_dict).T
+
+# sort the dictionary (now dataframe) accoridng two the first two files (here replicates of the experiemtn)
+df_sorted = df.sort_values([0, 1], ascending=[False, False])
+df_sorted.columns = files
+df_sorted.to_csv(plotpath + 'reproducible_motifs.csv', sep='\t')
+
+# change colun names back to integer for convience
+df_sorted.columns = [x for x in range(len(files))]
+
+# Find the n most reproducible motifs in the two replicates of your experiment
+n = 10
+top_n_motifs = ["red" for x in range(n)]
+rest_of_points = ["blue" for x in range(len(df_sorted[0]) - n)]
+colors_for_scatterplot = top_n_motifs + rest_of_points
+
 # create a plot and list of motifs with their sorted relative abundance for each pair of files
+p = 1
 for i in range(0,len(files)):
     for j in range(i+1, len(files)):
 
-        outfile_name = ""
+        outfile_name_plot = ""
+        outfile_name_motif_table = ""
         if args.outfile:
-            outfile_name = args.outfile
+            outfile_name_plot = args.outfile + '_' + str(p) + '.pdf'
         else:
-            outfile_name = plotpath + 'Crosslink_Kmer_Quality_Check_' + str(i) + '_' + str(j) + '.pdf'
+            outfile_name_plot = plotpath + 'Crosslink_Kmer_Quality_Check_' + str(i) + '_' + str(j) + '_' + str(p) + '.pdf'
 
-        pp = PdfPages(outfile_name)
-
-        df = pandas.DataFrame(kmer_dict).T
+        p  += 1
+        pp = PdfPages(outfile_name_plot)
 
         # do linear regression for the two files
-        slope, intercept, r_value, p_value, std_err = stats.linregress(df[i], df[j])
+        slope, intercept, r_value, p_value, std_err = stats.linregress(df_sorted[i], df_sorted[j])
 
-        plt.plot(df[i], df[j],  ls='', marker='.', ms=10.0)
+        plt.scatter(df_sorted[i], df_sorted[j], c=colors_for_scatterplot, s=2)
         plt.ylabel(files[i])
         plt.xlabel(files[j])
 
-        max_x = max(df[i])
-        max_y = max(df[j])
+        max_x = max(df_sorted[i])
+        max_y = max(df_sorted[j])
 
-        plt.text(max_x/3, max_y/2 + max_y*.2, "R" + r'$^2 =$' + " " + str(r_value), fontsize=15)
+        plt.title("R" + r'$^2 =$' + " " + str(r_value), fontsize=15)
 
         pp.savefig()
         pp.close()
-
-        outfile_name = 'test-data/reproducible_motifs_' + str(i) + '_' + str(j) + '.csv'
-        df_sorted = df[[i,j]]
-        df_sorted = df_sorted.sort_values([i, j], ascending=[False, False])
-        df_sorted.columns = [files[i], files[j]]
-        df_sorted.to_csv(outfile_name, sep='\t')
+        plt.close()
 
 print("[FINISH]")
 
