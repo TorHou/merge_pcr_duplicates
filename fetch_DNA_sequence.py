@@ -22,6 +22,9 @@ parser = argparse.ArgumentParser(description=tool_description,
 parser.add_argument(
     "interval_file",
     help="Path to bed/interval file.")
+parser.add_argument(
+    "genome_file",
+    help="Path to genome file (fasta).")
 # optional arguments
 parser.add_argument(
     "-o", "--outfile",
@@ -55,7 +58,7 @@ file = args.interval_file
 cl_regions = pandas.read_table(file, sep='\t', names=['chrom', 'start', 'stop'])
 
 # link to the reference genome in fasta format
-fastafile = pysam.Fastafile("test-data/hg19.fa")
+fastafile = pysam.Fastafile(args.genome_file)
 
 print("[NOTE] finish")
 
@@ -75,7 +78,8 @@ sequence_file = open(outfile_name, 'w')
 
 # get sequence for coordinates
 for i in range(0,len(cl_regions)):
-    sequence_file.write(fastafile.fetch(cl_regions['chrom'][i], cl_regions['start'][i], cl_regions['stop'][i]) + '\n')
+    sequence_file.write(">" + str(cl_regions['chrom'][i]) + "_" + str(cl_regions['start'][i]) + "_" +  str(cl_regions['stop'][i]) + "\n")
+    sequence_file.write(fastafile.fetch(str(cl_regions['chrom'][i]), int(cl_regions['start'][i]), int(cl_regions['stop'][i])) + '\n')
 
 sequence_file.close()
 
